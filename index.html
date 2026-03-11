@@ -121,11 +121,10 @@
   .timer-bar {
     height: 100%;
     border-radius: 99px;
-    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    background: #00e676;
     transition: none;
     width: 100%;
     transform-origin: left;
-    box-shadow: 0 0 12px rgba(255,210,0,0.6);
     position: relative;
     overflow: hidden;
   }
@@ -140,12 +139,15 @@
     0% { transform: translateX(-100%); }
     100% { transform: translateX(200%); }
   }
-  .timer-bar.danger {
-    background: linear-gradient(90deg, #ff6b6b, var(--wrong));
-    box-shadow: 0 0 12px rgba(255,23,68,0.6);
+  @keyframes barColor {
+    0%   { background: #00e676; box-shadow: 0 0 12px rgba(0,230,118,0.6); }
+    40%  { background: #ffd200; box-shadow: 0 0 12px rgba(255,210,0,0.6); }
+    65%  { background: #f7971e; box-shadow: 0 0 12px rgba(247,151,30,0.6); }
+    75%  { background: #ff1744; box-shadow: 0 0 12px rgba(255,23,68,0.6); }
+    100% { background: #ff1744; box-shadow: 0 0 12px rgba(255,23,68,0.6); }
   }
   .timer-bar.animating {
-    transition: width linear;
+    animation: barColor var(--timer-duration, 5s) linear forwards;
   }
 
   /* QUESTION CARD */
@@ -901,6 +903,7 @@ let questions = [];
 let currentQ = 0;
 let score = 0;
 let timerInterval = null;
+let dangerTimeout = null;
 let timerStart = null;
 let questionStart = null;
 let history = [];
@@ -950,10 +953,12 @@ function formatTime(ms) {
 function startTimer() {
   const bar = document.getElementById('timerBar');
   bar.style.transition = 'none';
+  bar.style.animationPlayState = '';
   bar.style.width = '100%';
-  bar.classList.remove('animating', 'danger');
+  bar.classList.remove('animating');
+  bar.style.setProperty('--timer-duration', TIMER_SECONDS + 's');
 
-  // Force reflow
+  // Force reflow to restart animation
   bar.getBoundingClientRect();
 
   bar.style.transition = `width ${TIMER_SECONDS}s linear`;
@@ -961,8 +966,6 @@ function startTimer() {
 
   timerStart = Date.now();
   questionStart = Date.now();
-
-  setTimeout(() => bar.classList.add('danger'), TIMER_SECONDS * 700);
 
   bar.style.width = '0%';
 
@@ -973,6 +976,7 @@ function startTimer() {
 
 function stopTimer() {
   clearTimeout(timerInterval);
+  clearTimeout(dangerTimeout);
 }
 
 function handleTimeout() {
@@ -1097,6 +1101,7 @@ function freezeTimer() {
   const parentWidth = bar.parentElement.getBoundingClientRect().width;
   const pct = (currentWidth / parentWidth * 100).toFixed(2);
   bar.style.transition = 'none';
+  bar.style.animationPlayState = 'paused';
   bar.style.width = pct + '%';
 }
 
